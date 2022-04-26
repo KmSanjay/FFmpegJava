@@ -1,28 +1,17 @@
 package com.sandroid.ffmpegjava;
 
-import static android.os.Build.VERSION.SDK_INT;
-import static androidx.core.content.FileProvider.getUriForFile;
-import static java.security.AccessController.getContext;
-
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.FileProvider;
-
-import android.content.ContentValues;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -35,19 +24,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+
 import org.florescu.android.rangeseekbar.RangeSeekBar;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+
+import VideoHandle.EpEditor;
+import VideoHandle.EpVideo;
+import VideoHandle.OnEditorListener;
 
 public class TrimActivity extends AppCompatActivity {
 
@@ -184,12 +172,12 @@ public class TrimActivity extends AppCompatActivity {
                     }
 
 
-                    Intent intent = new Intent(TrimActivity.this, ProgressBarActivity.class);
-                    intent.putExtra("duration", duration);
-                    intent.putExtra("command", command);
-                    intent.putExtra("destination", dest.getAbsolutePath());
-                    startActivity(intent);
-                    finish();
+//                    Intent intent = new Intent(TrimActivity.this, ProgressBarActivity.class);
+//                    intent.putExtra("duration", duration);
+//                    intent.putExtra("command", command);
+//                    intent.putExtra("destination", dest.getAbsolutePath());
+//                    startActivity(intent);
+//                    finish();
 
                     dialogInterface.dismiss();
 
@@ -238,18 +226,49 @@ public class TrimActivity extends AppCompatActivity {
 
         //File folder=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+"/"+"TrimVideos");
 
-        File folder=getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        if (!folder.exists()){
+        File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "Trim/");
+        if (!folder.exists()) {
             folder.mkdir();
         }
+
         filePrefix = fileName;
         String fileExt = ".mp4";
         dest = new File(folder, filePrefix + fileExt);
-        //contentUri=FileProvider.getUriForFile(getApplicationContext(),"com.sandroid.ffmpegjava.fileprovider",dest);
         original_path = getRealPathFromUri(getApplicationContext(), uri);
-        duration=(enMs-startMs)/1000;
-        command= new String[]{"-ss",""+startMs/1000 ,"-y","-i",original_path,"-t",""+(enMs-startMs)/1000,"-vcodec","mpeg4","-b:v","2097152","-b:a","48000",
-                "-ac","2","-ar","22050", dest.getAbsolutePath()};
+        duration = (enMs - startMs) / 1000;
+
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Trimming video");
+        progressDialog.show();
+        progressDialog.setCancelable(false);
+
+        EpVideo epVideo = new EpVideo(original_path);
+        epVideo.clip(startMs / 1000f, duration);
+        EpEditor.exec(epVideo, new EpEditor.OutputOption(dest.getAbsolutePath()), new OnEditorListener() {
+            @Override
+            public void onSuccess() {
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(TrimActivity.this, "Video trimmed", Toast.LENGTH_SHORT).show();
+                    onBackPressed();
+                });
+
+            }
+
+            @Override
+            public void onFailure() {
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(TrimActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                    onBackPressed();
+                });
+            }
+
+            @Override
+            public void onProgress(float progress) {
+
+            }
+        });
     }
 
 
