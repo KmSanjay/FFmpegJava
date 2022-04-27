@@ -226,9 +226,9 @@ public class TrimActivity extends AppCompatActivity {
 
         //File folder=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+"/"+"TrimVideos");
 
-        File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "Trim/");
+        File folder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "VideoEdit/Trim/");
         if (!folder.exists()) {
-            folder.mkdir();
+            folder.mkdirs();
         }
 
         filePrefix = fileName;
@@ -275,9 +275,9 @@ public class TrimActivity extends AppCompatActivity {
     private String getRealPathFromUri(Context context, Uri contentUri) {
         Cursor cursor = null;
         try {
-            String[] proj = {MediaStore.Images.Media.DATA};
+            String[] proj = {MediaStore.Video.Media.DATA};
             cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
 
             cursor.moveToFirst();
             return cursor.getString(column_index);
